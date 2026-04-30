@@ -36,7 +36,6 @@ async function getDashboardData(role: string) {
       where: {
         referenceMonth: { gte: firstOfMonth, lte: lastOfMonth },
       },
-      include: { apartment: true },
     }),
     prisma.expense.aggregate({
       where: {
@@ -80,12 +79,12 @@ async function getDashboardData(role: string) {
   );
 
   // Build chart data for last 6 months
-  const monthMap = new Map<string, { receitas: number; despesas: number }>();
+  const monthMap = new Map<string, { label: string; receitas: number; despesas: number }>();
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const label = d.toLocaleDateString("pt-MZ", { month: "short", year: "2-digit" });
-    monthMap.set(key, { receitas: 0, despesas: 0 });
+    monthMap.set(key, { label, receitas: 0, despesas: 0 });
   }
 
   for (const c of chargesLast6) {
@@ -101,15 +100,11 @@ async function getDashboardData(role: string) {
     if (entry) entry.despesas += parseFloat(e.amount.toString());
   }
 
-  const chartData = Array.from(monthMap.entries()).map(([key, values]) => {
-    const [year, month] = key.split("-");
-    const d = new Date(parseInt(year), parseInt(month) - 1, 1);
-    return {
-      month: d.toLocaleDateString("pt-MZ", { month: "short", year: "2-digit" }),
-      receitas: Math.round(values.receitas * 100) / 100,
-      despesas: Math.round(values.despesas * 100) / 100,
-    };
-  });
+  const chartData = Array.from(monthMap.values()).map(({ label, receitas, despesas }) => ({
+    month: label,
+    receitas: Math.round(receitas * 100) / 100,
+    despesas: Math.round(despesas * 100) / 100,
+  }));
 
   return {
     totalApartments,

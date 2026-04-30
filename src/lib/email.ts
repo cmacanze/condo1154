@@ -1,3 +1,4 @@
+import { Resend } from "resend";
 import { formatMZN, formatMonth } from "@/lib/utils";
 
 interface OverdueNotificationData {
@@ -11,17 +12,22 @@ interface OverdueNotificationData {
   lateFeeAmount: number;
 }
 
-export async function sendOverdueNotification(data: OverdueNotificationData): Promise<void> {
+let resend: Resend | null = null;
+function getResend(): Resend | null {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return;
+  if (!apiKey) return null;
+  if (!resend) resend = new Resend(apiKey);
+  return resend;
+}
 
-  const { Resend } = await import("resend");
-  const resend = new Resend(apiKey);
+export async function sendOverdueNotification(data: OverdueNotificationData): Promise<void> {
+  const client = getResend();
+  if (!client) return;
 
   const month = formatMonth(data.referenceMonth);
   const outstanding = formatMZN(data.outstandingAmount.toString());
 
-  await resend.emails.send({
+  await client.emails.send({
     from: process.env.EMAIL_FROM ?? "noreply@condo1154.mz",
     to: data.residentEmail,
     subject: `Condomínio 1154 — Quota em atraso: ${month}`,

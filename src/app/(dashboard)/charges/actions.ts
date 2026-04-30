@@ -182,28 +182,25 @@ export async function notifyOverdueResidents() {
     },
   });
 
-  let notified = 0;
-  for (const charge of overdueCharges) {
-    for (const resident of charge.apartment.residents) {
-      if (resident.user.email) {
-        try {
-          await sendOverdueNotification({
-            residentName: resident.user.name,
-            residentEmail: resident.user.email,
-            apartmentName: charge.apartment.name,
-            referenceMonth: charge.referenceMonth,
-            totalDue: parseFloat(charge.totalDue.toString()),
-            totalPaid: parseFloat(charge.totalPaid.toString()),
-            outstandingAmount: parseFloat(charge.outstandingAmount.toString()),
-            lateFeeAmount: parseFloat(charge.lateFeeAmount.toString()),
-          });
-          notified++;
-        } catch {
-          // continue on individual failure
-        }
-      }
-    }
-  }
+  const sends = overdueCharges.flatMap((charge) =>
+    charge.apartment.residents
+      .filter((r) => r.user.email)
+      .map((r) =>
+        sendOverdueNotification({
+          residentName: r.user.name,
+          residentEmail: r.user.email!,
+          apartmentName: charge.apartment.name,
+          referenceMonth: charge.referenceMonth,
+          totalDue: parseFloat(charge.totalDue.toString()),
+          totalPaid: parseFloat(charge.totalPaid.toString()),
+          outstandingAmount: parseFloat(charge.outstandingAmount.toString()),
+          lateFeeAmount: parseFloat(charge.lateFeeAmount.toString()),
+        }).catch(() => null)
+      )
+  );
+
+  const results = await Promise.all(sends);
+  const notified = results.filter((r) => r !== null).length;
 
   return { success: true, notified };
 }

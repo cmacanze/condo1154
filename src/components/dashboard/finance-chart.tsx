@@ -10,6 +10,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { formatMZN } from "@/lib/utils";
 
 interface MonthlyDataPoint {
   month: string;
@@ -42,9 +43,7 @@ function CustomTooltip({
             style={{ backgroundColor: entry.color }}
           />
           <span className="text-gray-500">{entry.name}:</span>
-          <span className="font-medium">
-            {entry.value.toLocaleString("pt-MZ", { minimumFractionDigits: 2 })} MZN
-          </span>
+          <span className="font-medium">{formatMZN(entry.value.toString())}</span>
         </div>
       ))}
     </div>
@@ -72,8 +71,8 @@ export function FinanceChart({ data }: { data: MonthlyDataPoint[] }) {
         <Tooltip content={<CustomTooltip />} />
         <Legend
           wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
-          formatter={(value) =>
-            value === "receitas" ? "Receitas" : "Despesas"
+          formatter={(value: string) =>
+            ({ receitas: "Receitas", despesas: "Despesas" }[value] ?? value)
           }
         />
         <Bar dataKey="receitas" fill="#22c55e" radius={[4, 4, 0, 0]} maxBarSize={40} />
