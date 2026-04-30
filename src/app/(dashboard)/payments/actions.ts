@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { createAuditLog } from "@/lib/audit";
 import { calculateOutstanding } from "@/lib/finance";
 import { generateReceiptNumber } from "@/lib/utils";
+import { uploadFile } from "@/lib/storage";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { PaymentMethod } from "@prisma/client";
@@ -51,6 +52,15 @@ export async function createPayment(formData: FormData) {
 
   const receiptNumber = generateReceiptNumber();
 
+  // Handle optional attachment
+  let attachmentUrl: string | null = null;
+  const attachmentFile = formData.get("attachment") as File | null;
+  if (attachmentFile && attachmentFile.size > 0) {
+    const uploadResult = await uploadFile(attachmentFile, "payments");
+    if ("error" in uploadResult) return { error: uploadResult.error };
+    attachmentUrl = uploadResult.url;
+  }
+
   const payment = await prisma.payment.create({
     data: {
       apartmentId: charge.apartmentId,
@@ -60,6 +70,7 @@ export async function createPayment(formData: FormData) {
       paymentMethod: data.paymentMethod,
       transactionReference: data.transactionReference || null,
       receiptNumber,
+      attachmentUrl,
       notes: data.notes || null,
       createdById: session.user.id,
     },

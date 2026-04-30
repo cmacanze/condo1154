@@ -25,7 +25,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { generateReport, publishReport, unpublishReport } from "@/app/(dashboard)/reports/actions";
 import { formatMZN, formatMonth } from "@/lib/utils";
-import { Plus, Eye, EyeOff, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { Plus, Eye, EyeOff, TrendingUp, TrendingDown, Wallet, Download } from "lucide-react";
 
 type ReportWithUser = Report & { createdBy: User };
 
@@ -204,34 +204,46 @@ export function ReportsClient({
                   <p className="text-sm">{selectedReport.notes}</p>
                 </div>
               )}
-              {isAdmin && (
-                <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
-                  {selectedReport.published ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={async () => {
-                        await unpublishReport(selectedReport.id);
-                        setSelectedReport(null);
-                      }}
-                    >
-                      <EyeOff className="mr-1 h-4 w-4" />
-                      Despublicar
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      onClick={async () => {
-                        await publishReport(selectedReport.id);
-                        setSelectedReport(null);
-                      }}
-                    >
-                      <Eye className="mr-1 h-4 w-4" />
-                      Publicar para Moradores
-                    </Button>
-                  )}
-                </div>
-              )}
+              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                <Button variant="outline" size="sm" asChild>
+                  <a
+                    href={`/api/pdf/report/${selectedReport.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Download className="mr-1 h-4 w-4" />
+                    Exportar PDF
+                  </a>
+                </Button>
+                {isAdmin && (
+                  <>
+                    {selectedReport.published ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          await unpublishReport(selectedReport.id);
+                          setSelectedReport(null);
+                        }}
+                      >
+                        <EyeOff className="mr-1 h-4 w-4" />
+                        Despublicar
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          await publishReport(selectedReport.id);
+                          setSelectedReport(null);
+                        }}
+                      >
+                        <Eye className="mr-1 h-4 w-4" />
+                        Publicar para Moradores
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>

@@ -33,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChargeStatusBadge } from "@/components/charges/charge-status-badge";
 import { createPayment, cancelPayment } from "@/app/(dashboard)/payments/actions";
 import { formatMZN, formatDate, formatMonth } from "@/lib/utils";
+import { FileUpload } from "@/components/ui/file-upload";
 import { Plus, XCircle, Receipt } from "lucide-react";
 
 type PaymentWithRelations = Payment & {
@@ -171,6 +172,11 @@ function PaymentForm({
       <div className="space-y-2">
         <Label>Observações</Label>
         <Textarea name="notes" rows={2} />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Comprovativo</Label>
+        <FileUpload name="attachment" />
       </div>
 
       <div className="flex justify-end gap-2 pt-2">

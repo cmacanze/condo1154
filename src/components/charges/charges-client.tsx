@@ -33,9 +33,10 @@ import {
   generateMonthlyCharges,
   applyLateFees,
   exemptCharge,
+  notifyOverdueResidents,
 } from "@/app/(dashboard)/charges/actions";
 import { formatMZN, formatDate, formatMonth } from "@/lib/utils";
-import { Zap, Calendar, ShieldOff } from "lucide-react";
+import { Zap, Calendar, ShieldOff, Bell } from "lucide-react";
 
 type ChargeWithApartment = MonthlyCharge & { apartment: Apartment };
 
@@ -88,6 +89,14 @@ export function ChargesClient({
     if (result.success) alert(`Multas aplicadas: ${result.applied}`);
   }
 
+  async function handleNotify() {
+    if (!confirm("Enviar notificações por email a todos os moradores com quotas em atraso?")) return;
+    setLoading(true);
+    const result = await notifyOverdueResidents();
+    setLoading(false);
+    if (result.success) alert(`Notificações enviadas: ${result.notified}`);
+  }
+
   async function handleExempt() {
     if (!exemptId || !exemptReason.trim()) return;
     const result = await exemptCharge(exemptId, exemptReason);
@@ -131,6 +140,10 @@ export function ChargesClient({
 
         {isAdmin && (
           <div className="flex gap-2">
+            <Button variant="outline" onClick={handleNotify} size="sm" disabled={loading}>
+              <Bell className="mr-1 h-4 w-4" />
+              Notificar em Atraso
+            </Button>
             <Button variant="outline" onClick={handleApplyFees} size="sm">
               <Zap className="mr-1 h-4 w-4" />
               Aplicar Multas

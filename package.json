@@ -34,6 +34,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-toast": "^1.2.15",
     "@react-pdf/renderer": "^4.5.1",
+    "@supabase/supabase-js": "^2.105.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/pg": "^8.20.0",
     "bcryptjs": "^3.0.3",
@@ -51,6 +52,7 @@
     "react-dom": "19.2.4",
     "react-hook-form": "^7.74.0",
     "recharts": "^3.8.1",
+    "resend": "^6.12.2",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.4.1"
   },

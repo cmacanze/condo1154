@@ -19,7 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatMZN, formatDate, formatMonth } from "@/lib/utils";
-import { Printer, Eye } from "lucide-react";
+import { Printer, Eye, Download } from "lucide-react";
 
 type PaymentWithRelations = Payment & {
   apartment: Apartment;
@@ -170,6 +170,19 @@ export function ReceiptsClient({
           </DialogHeader>
           {selected && <ReceiptView payment={selected} />}
           <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              asChild
+            >
+              <a
+                href={selected ? `/api/pdf/receipt/${selected.id}` : "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                PDF
+              </a>
+            </Button>
             <Button variant="outline" onClick={() => window.print()}>
               <Printer className="mr-2 h-4 w-4" />
               Imprimir

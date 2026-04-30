@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatMZN, formatMonth } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FinanceChart } from "@/components/dashboard/finance-chart";
 import {
   TrendingUp,
   TrendingDown,
@@ -16,6 +17,9 @@ async function getDashboardData(role: string) {
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
+  // Last 6 months for chart
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
   const [
     totalApartments,
     activeApartments,
@@ -23,6 +27,8 @@ async function getDashboardData(role: string) {
     expensesThisMonth,
     overdueCharges,
     paidCharges,
+    chargesLast6,
+    expensesLast6,
   ] = await Promise.all([
     prisma.apartment.count(),
     prisma.apartment.count({ where: { status: "active" } }),
@@ -48,6 +54,17 @@ async function getDashboardData(role: string) {
         referenceMonth: { gte: firstOfMonth, lte: lastOfMonth },
       },
     }),
+    prisma.monthlyCharge.findMany({
+      where: { referenceMonth: { gte: sixMonthsAgo } },
+      select: { referenceMonth: true, totalPaid: true },
+    }),
+    prisma.expense.findMany({
+      where: {
+        cancelled: false,
+        expenseDate: { gte: sixMonthsAgo },
+      },
+      select: { expenseDate: true, amount: true },
+    }),
   ]);
 
   const totalIncome = chargesThisMonth.reduce(
@@ -62,6 +79,38 @@ async function getDashboardData(role: string) {
     0
   );
 
+  // Build chart data for last 6 months
+  const monthMap = new Map<string, { receitas: number; despesas: number }>();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("pt-MZ", { month: "short", year: "2-digit" });
+    monthMap.set(key, { receitas: 0, despesas: 0 });
+  }
+
+  for (const c of chargesLast6) {
+    const d = new Date(c.referenceMonth);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const entry = monthMap.get(key);
+    if (entry) entry.receitas += parseFloat(c.totalPaid.toString());
+  }
+  for (const e of expensesLast6) {
+    const d = new Date(e.expenseDate);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const entry = monthMap.get(key);
+    if (entry) entry.despesas += parseFloat(e.amount.toString());
+  }
+
+  const chartData = Array.from(monthMap.entries()).map(([key, values]) => {
+    const [year, month] = key.split("-");
+    const d = new Date(parseInt(year), parseInt(month) - 1, 1);
+    return {
+      month: d.toLocaleDateString("pt-MZ", { month: "short", year: "2-digit" }),
+      receitas: Math.round(values.receitas * 100) / 100,
+      despesas: Math.round(values.despesas * 100) / 100,
+    };
+  });
+
   return {
     totalApartments,
     activeApartments,
@@ -75,6 +124,7 @@ async function getDashboardData(role: string) {
       ["pending", "partial", "overdue"].includes(c.status)
     ).length,
     currentMonth: formatMonth(firstOfMonth),
+    chartData,
   };
 }
 
@@ -186,6 +236,17 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold text-gray-700">
+            Receitas vs Despesas — últimos 6 meses
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FinanceChart data={data.chartData} />
+        </CardContent>
+      </Card>
     </div>
   );
 }

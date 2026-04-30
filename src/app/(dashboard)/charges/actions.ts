@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { createAuditLog } from "@/lib/audit";
 import { calculateLateFee } from "@/lib/finance";
+import { sendOverdueNotification } from "@/lib/email";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -164,4 +165,45 @@ export async function exemptCharge(chargeId: string, reason: string) {
 
   revalidatePath("/charges");
   return { success: true };
+}
+
+export async function notifyOverdueResidents() {
+  const session = await auth();
+  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+
+  const overdueCharges = await prisma.monthlyCharge.findMany({
+    where: { status: { in: ["overdue", "partial"] } },
+    include: {
+      apartment: {
+        include: {
+          residents: { where: { status: "active" }, include: { user: true } },
+        },
+      },
+    },
+  });
+
+  let notified = 0;
+  for (const charge of overdueCharges) {
+    for (const resident of charge.apartment.residents) {
+      if (resident.user.email) {
+        try {
+          await sendOverdueNotification({
+            residentName: resident.user.name,
+            residentEmail: resident.user.email,
+            apartmentName: charge.apartment.name,
+            referenceMonth: charge.referenceMonth,
+            totalDue: parseFloat(charge.totalDue.toString()),
+            totalPaid: parseFloat(charge.totalPaid.toString()),
+            outstandingAmount: parseFloat(charge.outstandingAmount.toString()),
+            lateFeeAmount: parseFloat(charge.lateFeeAmount.toString()),
+          });
+          notified++;
+        } catch {
+          // continue on individual failure
+        }
+      }
+    }
+  }
+
+  return { success: true, notified };
 }

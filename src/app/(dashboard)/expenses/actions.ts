@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { createAuditLog } from "@/lib/audit";
+import { uploadFile } from "@/lib/storage";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { ExpenseCategory, PaymentMethod } from "@prisma/client";
@@ -26,6 +27,14 @@ export async function createExpense(formData: FormData) {
 
   const data = parsed.data;
 
+  let attachmentUrl: string | null = null;
+  const attachmentFile = formData.get("attachment") as File | null;
+  if (attachmentFile && attachmentFile.size > 0) {
+    const uploadResult = await uploadFile(attachmentFile, "expenses");
+    if ("error" in uploadResult) return { error: uploadResult.error };
+    attachmentUrl = uploadResult.url;
+  }
+
   const expense = await prisma.expense.create({
     data: {
       expenseDate: new Date(data.expenseDate),
@@ -34,6 +43,7 @@ export async function createExpense(formData: FormData) {
       beneficiary: data.beneficiary || null,
       amount: data.amount,
       paymentMethod: data.paymentMethod,
+      attachmentUrl,
       isPublic: data.isPublic === "on" || data.isPublic === "true",
       createdById: session.user.id,
     },

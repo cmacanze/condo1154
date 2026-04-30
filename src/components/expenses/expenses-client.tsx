@@ -32,7 +32,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { createExpense, updateExpense, cancelExpense } from "@/app/(dashboard)/expenses/actions";
 import { formatMZN, formatDate } from "@/lib/utils";
-import { Plus, Pencil, XCircle, Eye, EyeOff } from "lucide-react";
+import { FileUpload } from "@/components/ui/file-upload";
+import { Plus, Pencil, XCircle, Eye, EyeOff, Paperclip } from "lucide-react";
 
 type ExpenseWithUser = Expense & { createdBy: User };
 
@@ -150,6 +151,14 @@ function ExpenseForm({
         </div>
       </div>
 
+      <div className="space-y-2">
+        <Label>Comprovativo</Label>
+        <FileUpload
+          name="attachment"
+          currentUrl={expense?.attachmentUrl}
+        />
+      </div>
+
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
         <Button type="submit" disabled={loading}>
@@ -226,6 +235,7 @@ export function ExpensesClient({
               <TableHead>Beneficiário</TableHead>
               <TableHead>Valor</TableHead>
               <TableHead>Visível</TableHead>
+              <TableHead className="w-12">Doc.</TableHead>
               {isAdmin && <TableHead className="w-24">Acções</TableHead>}
             </TableRow>
           </TableHeader>
@@ -250,6 +260,15 @@ export function ExpensesClient({
                     {e.isPublic
                       ? <Eye className="h-4 w-4 text-green-600" />
                       : <EyeOff className="h-4 w-4 text-gray-400" />}
+                  </TableCell>
+                  <TableCell>
+                    {e.attachmentUrl ? (
+                      <a href={e.attachmentUrl} target="_blank" rel="noopener noreferrer">
+                        <Paperclip className="h-4 w-4 text-blue-600 hover:text-blue-800" />
+                      </a>
+                    ) : (
+                      <span className="text-gray-300">—</span>
+                    )}
                   </TableCell>
                   {isAdmin && (
                     <TableCell>
