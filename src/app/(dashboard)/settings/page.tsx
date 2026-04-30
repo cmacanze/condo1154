@@ -2,8 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDate } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { SettingsClient } from "@/components/settings/settings-client";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -11,9 +10,7 @@ export default async function SettingsPage() {
     redirect("/dashboard");
   }
 
-  const users = await prisma.user.findMany({
-    orderBy: { name: "asc" },
-  });
+  const users = await prisma.user.findMany({ orderBy: { name: "asc" } });
 
   const roleLabel: Record<string, string> = {
     admin: "Administrador",
@@ -33,23 +30,7 @@ export default async function SettingsPage() {
           <CardTitle>Utilizadores do Sistema</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {users.map((u) => (
-              <div key={u.id} className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-3">
-                <div>
-                  <p className="font-medium text-gray-900">{u.name}</p>
-                  <p className="text-sm text-gray-500">{u.email}</p>
-                  {u.phone && <p className="text-xs text-gray-400">{u.phone}</p>}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">{roleLabel[u.role]}</Badge>
-                  <Badge variant={u.status === "active" ? "success" : "secondary"}>
-                    {u.status === "active" ? "Activo" : "Inactivo"}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
+          <SettingsClient users={users} currentUserId={session.user.id} />
         </CardContent>
       </Card>
 
@@ -60,7 +41,7 @@ export default async function SettingsPage() {
         <CardContent className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-500">Versão</span>
-            <span className="font-medium">1.0.0 MVP</span>
+            <span className="font-medium">1.0.0</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">Sessão actual</span>
