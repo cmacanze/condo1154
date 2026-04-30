@@ -1,0 +1,294 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  admin
+  resident
+  auditor
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
+enum UnitType {
+  apartment
+  flat
+  shop
+  dependency
+  other
+}
+
+enum LateFeeType {
+  none
+  fixed
+  percentage
+}
+
+enum ApartmentStatus {
+  active
+  inactive
+}
+
+enum ResidentRelationship {
+  owner
+  tenant
+  representative
+}
+
+enum ResidentStatus {
+  active
+  inactive
+}
+
+enum ChargeStatus {
+  pending
+  paid
+  partial
+  overdue
+  exempt
+  cancelled
+}
+
+enum PaymentMethod {
+  cash
+  transfer
+  mpesa
+  emola
+  other
+}
+
+enum ExpenseCategory {
+  security
+  cleaning
+  energy
+  water
+  maintenance
+  repairs
+  materials
+  administration
+  other
+}
+
+enum AuditAction {
+  created
+  updated
+  deleted
+  deactivated
+  activated
+  applied
+  adjusted
+  removed
+  generated
+  published
+  cancelled
+}
+
+enum AuditEntity {
+  user
+  apartment
+  resident
+  monthly_charge
+  payment
+  expense
+  salary_payment
+  report
+  late_fee
+}
+
+model User {
+  id        String     @id @default(cuid())
+  name      String
+  email     String     @unique
+  phone     String?
+  password  String
+  role      UserRole   @default(resident)
+  status    UserStatus @default(active)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  residents       Resident[]
+  paymentsCreated Payment[]       @relation("PaymentCreatedBy")
+  expensesCreated Expense[]       @relation("ExpenseCreatedBy")
+  salariesCreated SalaryPayment[] @relation("SalaryCreatedBy")
+  reportsCreated  Report[]        @relation("ReportCreatedBy")
+  auditLogs       AuditLog[]
+
+  @@map("users")
+}
+
+model Apartment {
+  id                  String          @id @default(cuid())
+  name                String
+  unitType            UnitType        @default(apartment)
+  monthlyContribution Decimal         @db.Decimal(12, 2)
+  paymentDueDay       Int             @default(10)
+  lateFeeType         LateFeeType     @default(none)
+  lateFeeValue        Decimal         @default(0) @db.Decimal(12, 2)
+  status              ApartmentStatus @default(active)
+  notes               String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  residents      Resident[]
+  monthlyCharges MonthlyCharge[]
+  payments       Payment[]
+
+  @@map("apartments")
+}
+
+model Resident {
+  id               String               @id @default(cuid())
+  userId           String
+  apartmentId      String
+  relationshipType ResidentRelationship @default(tenant)
+  status           ResidentStatus       @default(active)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id])
+  apartment Apartment @relation(fields: [apartmentId], references: [id])
+
+  @@unique([userId, apartmentId])
+  @@map("residents")
+}
+
+model MonthlyCharge {
+  id                String       @id @default(cuid())
+  apartmentId       String
+  referenceMonth    DateTime
+  baseAmount        Decimal      @db.Decimal(12, 2)
+  dueDate           DateTime
+  lateFeeAmount     Decimal      @default(0) @db.Decimal(12, 2)
+  totalDue          Decimal      @db.Decimal(12, 2)
+  totalPaid         Decimal      @default(0) @db.Decimal(12, 2)
+  outstandingAmount Decimal      @db.Decimal(12, 2)
+  status            ChargeStatus @default(pending)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  apartment Apartment @relation(fields: [apartmentId], references: [id])
+  payments  Payment[]
+
+  @@unique([apartmentId, referenceMonth])
+  @@map("monthly_charges")
+}
+
+model Payment {
+  id                   String        @id @default(cuid())
+  apartmentId          String
+  monthlyChargeId      String
+  paymentDate          DateTime
+  amount               Decimal       @db.Decimal(12, 2)
+  paymentMethod        PaymentMethod @default(cash)
+  transactionReference String?
+  receiptNumber        String        @unique
+  attachmentUrl        String?
+  notes                String?
+  createdById          String
+  cancelled            Boolean       @default(false)
+  cancelReason         String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  apartment     Apartment     @relation(fields: [apartmentId], references: [id])
+  monthlyCharge MonthlyCharge @relation(fields: [monthlyChargeId], references: [id])
+  createdBy     User          @relation("PaymentCreatedBy", fields: [createdById], references: [id])
+
+  @@map("payments")
+}
+
+model Expense {
+  id            String          @id @default(cuid())
+  expenseDate   DateTime
+  category      ExpenseCategory @default(other)
+  description   String
+  beneficiary   String?
+  amount        Decimal         @db.Decimal(12, 2)
+  paymentMethod PaymentMethod   @default(cash)
+  attachmentUrl String?
+  isPublic      Boolean         @default(false)
+  cancelled     Boolean         @default(false)
+  cancelReason  String?
+  createdById   String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  createdBy User @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
+
+  @@map("expenses")
+}
+
+model SecurityStaff {
+  id        String     @id @default(cuid())
+  name      String
+  phone     String?
+  status    UserStatus @default(active)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  salaryPayments SalaryPayment[]
+
+  @@map("security_staff")
+}
+
+model SalaryPayment {
+  id              String   @id @default(cuid())
+  securityStaffId String
+  referenceMonth  DateTime
+  paymentDate     DateTime
+  amount          Decimal  @db.Decimal(12, 2)
+  receiptUrl      String?
+  notes           String?
+  expenseId       String?  @unique
+  createdById     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  securityStaff SecurityStaff @relation(fields: [securityStaffId], references: [id])
+  createdBy     User          @relation("SalaryCreatedBy", fields: [createdById], references: [id])
+
+  @@map("salary_payments")
+}
+
+model Report {
+  id             String   @id @default(cuid())
+  referenceMonth DateTime @unique
+  openingBalance Decimal  @db.Decimal(12, 2)
+  totalIncome    Decimal  @db.Decimal(12, 2)
+  totalLateFees  Decimal  @db.Decimal(12, 2)
+  totalExpenses  Decimal  @db.Decimal(12, 2)
+  closingBalance Decimal  @db.Decimal(12, 2)
+  notes          String?
+  reportUrl      String?
+  published      Boolean  @default(false)
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  createdBy User @relation("ReportCreatedBy", fields: [createdById], references: [id])
+
+  @@map("reports")
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  userId     String
+  entityType AuditEntity
+  entityId   String
+  action     AuditAction
+  oldValues  Json?
+  newValues  Json?
+  reason     String?
+  createdAt  DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
