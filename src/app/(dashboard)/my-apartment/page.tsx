@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertCircle, CheckCircle2, Home } from "lucide-react";
+import { AlertCircle, CheckCircle2, Home, Download } from "lucide-react";
 
 export default async function MyApartmentPage() {
   const session = await auth();
@@ -175,12 +175,13 @@ export default async function MyApartmentPage() {
                 <TableHead>Data</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Método</TableHead>
+                <TableHead className="w-16">PDF</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {payments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-gray-400 py-8">
+                  <TableCell colSpan={6} className="text-center text-gray-400 py-8">
                     Sem pagamentos registados.
                   </TableCell>
                 </TableRow>
@@ -195,6 +196,17 @@ export default async function MyApartmentPage() {
                       <Badge variant="secondary">
                         {({ cash: "Numerário", transfer: "Transferência", mpesa: "M-Pesa", emola: "e-Mola", other: "Outro" })[p.paymentMethod]}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <a
+                        href={`/api/pdf/receipt/${p.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 transition-colors"
+                        title="Descarregar recibo PDF"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </a>
                     </TableCell>
                   </TableRow>
                 ))
