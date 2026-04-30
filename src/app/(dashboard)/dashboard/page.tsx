@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatMZN, formatMonth } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -126,6 +127,10 @@ async function getDashboardData(role: string) {
 export default async function DashboardPage() {
   const session = await auth();
   if (!session) return null;
+
+  if (session.user.role === "resident") {
+    redirect("/my-apartment");
+  }
 
   const data = await getDashboardData(session.user.role);
 
