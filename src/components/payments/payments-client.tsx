@@ -35,7 +35,15 @@ import { createPayment, cancelPayment } from "@/app/(dashboard)/payments/actions
 import { formatMZN, formatDate, formatMonth } from "@/lib/utils";
 import { FileUpload } from "@/components/ui/file-upload";
 import { toast } from "sonner";
-import { Plus, XCircle, Receipt } from "lucide-react";
+import { Plus, XCircle, Receipt, Download } from "lucide-react";
+
+function downloadCsv(filename: string, rows: string[][]) {
+  const bom = "﻿";
+  const csv = bom + rows.map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+  Object.assign(document.createElement("a"), { href: url, download: filename }).click();
+  URL.revokeObjectURL(url);
+}
 
 type PaymentWithRelations = Payment & {
   apartment: Apartment;
@@ -214,13 +222,34 @@ export function PaymentsClient({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <input
-          type="search"
-          placeholder="Pesquisar por apartamento ou recibo..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 sm:max-w-xs"
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="search"
+            placeholder="Pesquisar por apartamento ou recibo..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 sm:max-w-xs"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const header = ["Recibo","Apartamento","Mensalidade","Data","Valor (MZN)","Método"];
+              const rows = filtered.map((p) => [
+                p.receiptNumber,
+                p.apartment.name,
+                formatMonth(p.monthlyCharge.referenceMonth),
+                formatDate(p.paymentDate),
+                p.amount.toString(),
+                methodLabel[p.paymentMethod] ?? p.paymentMethod,
+              ]);
+              downloadCsv("pagamentos.csv", [header, ...rows]);
+            }}
+          >
+            <Download className="mr-1 h-4 w-4" />
+            Exportar CSV
+          </Button>
+        </div>
         {isAdmin && (
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
