@@ -22,9 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { generateReport, publishReport, unpublishReport } from "@/app/(dashboard)/reports/actions";
 import { formatMZN, formatMonth } from "@/lib/utils";
+import { toast } from "sonner";
 import { Plus, Eye, EyeOff, TrendingUp, TrendingDown, Wallet, Download } from "lucide-react";
 
 type ReportWithUser = Report & { createdBy: User };
@@ -42,22 +43,38 @@ export function ReportsClient({
   isAdmin: boolean;
 }) {
   const [generateOpen, setGenerateOpen] = useState(false);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedReport, setSelectedReport] = useState<ReportWithUser | null>(null);
+  const [confirmAction, setConfirmAction] = useState<"publish" | "unpublish" | null>(null);
   const now = new Date();
   const [genYear, setGenYear] = useState(now.getFullYear());
   const [genMonth, setGenMonth] = useState(now.getMonth() + 1);
 
   async function handleGenerate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError("");
     setLoading(true);
-    const fd = new FormData(e.currentTarget);
-    const result = await generateReport(fd);
+    const result = await generateReport(new FormData(e.currentTarget));
     setLoading(false);
-    if (result.error) setError(result.error);
-    else setGenerateOpen(false);
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      setGenerateOpen(false);
+      toast.success("Relatório gerado.");
+    }
+  }
+
+  async function handlePublish() {
+    if (!selectedReport) return;
+    const result = await publishReport(selectedReport.id);
+    if ("error" in result) toast.error(result.error);
+    else { setSelectedReport(null); toast.success("Relatório publicado para moradores."); }
+  }
+
+  async function handleUnpublish() {
+    if (!selectedReport) return;
+    const result = await unpublishReport(selectedReport.id);
+    if ("error" in result) toast.error(result.error);
+    else { setSelectedReport(null); toast.success("Relatório despublicado."); }
   }
 
   return (
@@ -76,11 +93,6 @@ export function ReportsClient({
                 <DialogTitle>Gerar Relatório Mensal</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleGenerate} className="space-y-4">
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Ano</Label>
@@ -216,38 +228,41 @@ export function ReportsClient({
                   </a>
                 </Button>
                 {isAdmin && (
-                  <>
-                    {selectedReport.published ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={async () => {
-                          await unpublishReport(selectedReport.id);
-                          setSelectedReport(null);
-                        }}
-                      >
-                        <EyeOff className="mr-1 h-4 w-4" />
-                        Despublicar
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        onClick={async () => {
-                          await publishReport(selectedReport.id);
-                          setSelectedReport(null);
-                        }}
-                      >
-                        <Eye className="mr-1 h-4 w-4" />
-                        Publicar para Moradores
-                      </Button>
-                    )}
-                  </>
+                  selectedReport.published ? (
+                    <Button variant="outline" size="sm" onClick={() => setConfirmAction("unpublish")}>
+                      <EyeOff className="mr-1 h-4 w-4" />
+                      Despublicar
+                    </Button>
+                  ) : (
+                    <Button size="sm" onClick={() => setConfirmAction("publish")}>
+                      <Eye className="mr-1 h-4 w-4" />
+                      Publicar para Moradores
+                    </Button>
+                  )
                 )}
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmAction === "publish"}
+        title="Publicar relatório"
+        description="Este relatório ficará visível para todos os moradores. Confirma?"
+        confirmLabel="Publicar"
+        onConfirm={() => { setConfirmAction(null); handlePublish(); }}
+        onCancel={() => setConfirmAction(null)}
+      />
+      <ConfirmDialog
+        open={confirmAction === "unpublish"}
+        title="Despublicar relatório"
+        description="Os moradores deixarão de ver este relatório. Confirma?"
+        confirmLabel="Despublicar"
+        destructive
+        onConfirm={() => { setConfirmAction(null); handleUnpublish(); }}
+        onCancel={() => setConfirmAction(null)}
+      />
     </div>
   );
 }

@@ -18,15 +18,19 @@ export async function createAuditLog({
   newValues?: Record<string, unknown>;
   reason?: string;
 }) {
-  await prisma.auditLog.create({
-    data: {
-      userId,
-      entityType,
-      entityId,
-      action,
-      oldValues: oldValues ? (oldValues as import("@prisma/client").Prisma.InputJsonValue) : undefined,
-      newValues: newValues ? (newValues as import("@prisma/client").Prisma.InputJsonValue) : undefined,
-      reason,
-    },
-  });
+  try {
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        entityType,
+        entityId,
+        action,
+        oldValues: oldValues ? (oldValues as import("@prisma/client").Prisma.InputJsonValue) : undefined,
+        newValues: newValues ? (newValues as import("@prisma/client").Prisma.InputJsonValue) : undefined,
+        reason,
+      },
+    });
+  } catch (err) {
+    console.error("[audit] Failed to write audit log:", err);
+  }
 }

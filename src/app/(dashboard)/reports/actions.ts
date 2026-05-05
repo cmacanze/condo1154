@@ -95,6 +95,9 @@ export async function publishReport(reportId: string) {
   const session = await auth();
   if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
 
+  const report = await prisma.report.findUnique({ where: { id: reportId } });
+  if (!report) return { error: "Relatório não encontrado." };
+
   await prisma.report.update({
     where: { id: reportId },
     data: { published: true },
@@ -114,6 +117,9 @@ export async function publishReport(reportId: string) {
 export async function unpublishReport(reportId: string) {
   const session = await auth();
   if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+
+  const report = await prisma.report.findUnique({ where: { id: reportId } });
+  if (!report) return { error: "Relatório não encontrado." };
 
   await prisma.report.update({
     where: { id: reportId },

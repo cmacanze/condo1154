@@ -61,29 +61,30 @@ export async function createPayment(formData: FormData) {
     attachmentUrl = uploadResult.url;
   }
 
-  const payment = await prisma.payment.create({
-    data: {
-      apartmentId: charge.apartmentId,
-      monthlyChargeId: charge.id,
-      paymentDate: new Date(data.paymentDate),
-      amount: data.amount,
-      paymentMethod: data.paymentMethod,
-      transactionReference: data.transactionReference || null,
-      receiptNumber,
-      attachmentUrl,
-      notes: data.notes || null,
-      createdById: session.user.id,
-    },
-  });
-
-  await prisma.monthlyCharge.update({
-    where: { id: charge.id },
-    data: {
-      totalPaid: newTotalPaid.toNumber(),
-      outstandingAmount: newOutstanding,
-      status: newStatus,
-    },
-  });
+  const [payment] = await prisma.$transaction([
+    prisma.payment.create({
+      data: {
+        apartmentId: charge.apartmentId,
+        monthlyChargeId: charge.id,
+        paymentDate: new Date(data.paymentDate),
+        amount: data.amount,
+        paymentMethod: data.paymentMethod,
+        transactionReference: data.transactionReference || null,
+        receiptNumber,
+        attachmentUrl,
+        notes: data.notes || null,
+        createdById: session.user.id,
+      },
+    }),
+    prisma.monthlyCharge.update({
+      where: { id: charge.id },
+      data: {
+        totalPaid: newTotalPaid.toNumber(),
+        outstandingAmount: newOutstanding,
+        status: newStatus,
+      },
+    }),
+  ]);
 
   await createAuditLog({
     userId: session.user.id,
@@ -126,19 +127,20 @@ export async function cancelPayment(paymentId: string, reason: string) {
   if (newTotalPaid.greaterThan(0)) newStatus = "partial";
   if (charge.dueDate < now && newOutstanding > 0) newStatus = "overdue";
 
-  await prisma.payment.update({
-    where: { id: paymentId },
-    data: { cancelled: true, cancelReason: reason },
-  });
-
-  await prisma.monthlyCharge.update({
-    where: { id: charge.id },
-    data: {
-      totalPaid: newTotalPaid.toNumber(),
-      outstandingAmount: newOutstanding,
-      status: newStatus,
-    },
-  });
+  await prisma.$transaction([
+    prisma.payment.update({
+      where: { id: paymentId },
+      data: { cancelled: true, cancelReason: reason },
+    }),
+    prisma.monthlyCharge.update({
+      where: { id: charge.id },
+      data: {
+        totalPaid: newTotalPaid.toNumber(),
+        outstandingAmount: newOutstanding,
+        status: newStatus,
+      },
+    }),
+  ]);
 
   await createAuditLog({
     userId: session.user.id,
