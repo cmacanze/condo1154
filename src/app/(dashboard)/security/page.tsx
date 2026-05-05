@@ -14,6 +14,7 @@ export default async function SecurityPage() {
     prisma.salaryPayment.findMany({
       include: { securityStaff: true, createdBy: true },
       orderBy: { paymentDate: "desc" },
+      take: 300,
     }),
   ]);
 

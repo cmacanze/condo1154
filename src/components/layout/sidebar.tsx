@@ -37,7 +37,7 @@ const navItems: NavItem[] = [
   { href: "/expenses", label: "Despesas", icon: Receipt, roles: ["admin", "auditor"] },
   { href: "/security", label: "Seguranças", icon: ShieldCheck, roles: ["admin", "auditor"] },
   { href: "/reports", label: "Relatórios", icon: BarChart3, roles: ["admin", "resident", "auditor"] },
-  { href: "/receipts", label: "Recibos", icon: FileText, roles: ["admin", "resident", "auditor"] },
+  { href: "/receipts", label: "Recibos", icon: Receipt, roles: ["admin", "resident", "auditor"] },
   { href: "/audit", label: "Auditoria", icon: ClipboardList, roles: ["admin", "auditor"] },
   { href: "/my-apartment", label: "O Meu Apartamento", icon: Home, roles: ["resident"] },
   { href: "/settings", label: "Configurações", icon: Settings, roles: ["admin"] },
