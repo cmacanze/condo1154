@@ -70,6 +70,7 @@ export async function updateExpense(id: string, formData: FormData) {
 
   const data = parsed.data;
   const old = await prisma.expense.findUnique({ where: { id } });
+  if (!old) return { error: "Despesa não encontrada." };
 
   await prisma.expense.update({
     where: { id },

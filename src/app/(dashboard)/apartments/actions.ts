@@ -74,6 +74,7 @@ export async function updateApartment(id: string, formData: FormData) {
   const data = parsed.data;
 
   const old = await prisma.apartment.findUnique({ where: { id } });
+  if (!old) return { error: "Apartamento não encontrado." };
 
   await prisma.apartment.update({
     where: { id },

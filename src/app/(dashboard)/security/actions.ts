@@ -26,11 +26,19 @@ export async function createSecurityStaff(formData: FormData) {
   const parsed = staffSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  await prisma.securityStaff.create({
+  const staff = await prisma.securityStaff.create({
     data: {
       name: parsed.data.name,
       phone: parsed.data.phone || null,
     },
+  });
+
+  await createAuditLog({
+    userId: session.user.id,
+    entityType: "user",
+    entityId: staff.id,
+    action: "created",
+    newValues: { name: parsed.data.name },
   });
 
   revalidatePath("/security");

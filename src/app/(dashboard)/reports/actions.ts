@@ -120,6 +120,14 @@ export async function unpublishReport(reportId: string) {
     data: { published: false },
   });
 
+  await createAuditLog({
+    userId: session.user.id,
+    entityType: "report",
+    entityId: reportId,
+    action: "updated",
+    newValues: { published: false },
+  });
+
   revalidatePath("/reports");
   return { success: true };
 }
