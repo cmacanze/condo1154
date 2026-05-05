@@ -58,6 +58,7 @@ export function AuditFilters() {
       if (value) params.set(key, value);
       else params.delete(key);
       router.push(`${pathname}?${params.toString()}`);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     },
     [pathname, router, searchParams]
   );

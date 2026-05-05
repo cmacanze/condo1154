@@ -34,7 +34,15 @@ import { createExpense, updateExpense, cancelExpense } from "@/app/(dashboard)/e
 import { formatMZN, formatDate } from "@/lib/utils";
 import { FileUpload } from "@/components/ui/file-upload";
 import { toast } from "sonner";
-import { Plus, Pencil, XCircle, Eye, EyeOff, Paperclip } from "lucide-react";
+import { Plus, Pencil, XCircle, Eye, EyeOff, Paperclip, Download } from "lucide-react";
+
+function downloadCsv(filename: string, rows: string[][]) {
+  const bom = "﻿";
+  const csv = bom + rows.map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+  Object.assign(document.createElement("a"), { href: url, download: filename }).click();
+  URL.revokeObjectURL(url);
+}
 
 type ExpenseWithUser = Expense & { createdBy: User };
 
@@ -194,13 +202,34 @@ export function ExpensesClient({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <input
-          type="search"
-          placeholder="Pesquisar despesa..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 sm:max-w-xs"
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="search"
+            placeholder="Pesquisar despesa..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 sm:max-w-xs"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const header = ["Data","Categoria","Descrição","Beneficiário","Valor (MZN)","Visível"];
+              const rows = filtered.map((e) => [
+                formatDate(e.expenseDate),
+                categoryLabel[e.category] ?? e.category,
+                e.description,
+                e.beneficiary ?? "",
+                e.amount.toString(),
+                e.isPublic ? "Sim" : "Não",
+              ]);
+              downloadCsv("despesas.csv", [header, ...rows]);
+            }}
+          >
+            <Download className="mr-1 h-4 w-4" />
+            Exportar CSV
+          </Button>
+        </div>
         {isAdmin && (
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>

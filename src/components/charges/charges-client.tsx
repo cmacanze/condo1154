@@ -38,7 +38,15 @@ import {
 } from "@/app/(dashboard)/charges/actions";
 import { formatMZN, formatDate, formatMonth } from "@/lib/utils";
 import { toast } from "sonner";
-import { Zap, Calendar, ShieldOff, Bell } from "lucide-react";
+import { Zap, Calendar, ShieldOff, Bell, Download } from "lucide-react";
+
+function downloadCsv(filename: string, rows: string[][]) {
+  const bom = "﻿";
+  const csv = bom + rows.map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+  Object.assign(document.createElement("a"), { href: url, download: filename }).click();
+  URL.revokeObjectURL(url);
+}
 
 type ChargeWithApartment = MonthlyCharge & { apartment: Apartment };
 
@@ -138,6 +146,31 @@ export function ChargesClient({
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const header = ["Apartamento","Mês","Base (MZN)","Multa (MZN)","Total (MZN)","Pago (MZN)","Em aberto (MZN)","Estado","Limite"];
+              const rows = filtered.map((c) => [
+                c.apartment.name,
+                formatMonth(c.referenceMonth),
+                c.baseAmount.toString(),
+                c.lateFeeAmount.toString(),
+                c.totalDue.toString(),
+                c.totalPaid.toString(),
+                c.outstandingAmount.toString(),
+                c.status,
+                formatDate(c.dueDate),
+              ]);
+              downloadCsv("mensalidades.csv", [header, ...rows]);
+            }}
+          >
+            <Download className="mr-1 h-4 w-4" />
+            Exportar CSV
+          </Button>
         </div>
 
         {isAdmin && (
