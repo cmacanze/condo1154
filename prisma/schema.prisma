@@ -156,6 +156,8 @@ model Resident {
   apartment Apartment @relation(fields: [apartmentId], references: [id])
 
   @@unique([userId, apartmentId])
+  @@index([userId])
+  @@index([apartmentId, status])
   @@map("residents")
 }
 
@@ -177,6 +179,8 @@ model MonthlyCharge {
   payments  Payment[]
 
   @@unique([apartmentId, referenceMonth])
+  @@index([status])
+  @@index([referenceMonth])
   @@map("monthly_charges")
 }
 
@@ -201,6 +205,9 @@ model Payment {
   monthlyCharge MonthlyCharge @relation(fields: [monthlyChargeId], references: [id])
   createdBy     User          @relation("PaymentCreatedBy", fields: [createdById], references: [id])
 
+  @@index([apartmentId])
+  @@index([monthlyChargeId])
+  @@index([cancelled, createdAt])
   @@map("payments")
 }
 
@@ -222,6 +229,8 @@ model Expense {
 
   createdBy User @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
 
+  @@index([cancelled, expenseDate])
+  @@index([expenseDate])
   @@map("expenses")
 }
 
@@ -254,6 +263,8 @@ model SalaryPayment {
   securityStaff SecurityStaff @relation(fields: [securityStaffId], references: [id])
   createdBy     User          @relation("SalaryCreatedBy", fields: [createdById], references: [id])
 
+  @@index([securityStaffId])
+  @@index([referenceMonth])
   @@map("salary_payments")
 }
 
@@ -290,5 +301,8 @@ model AuditLog {
 
   user User @relation(fields: [userId], references: [id])
 
+  @@index([userId])
+  @@index([entityType, action])
+  @@index([createdAt])
   @@map("audit_logs")
 }

@@ -15,7 +15,7 @@ const generateSchema = z.object({
 
 export async function generateMonthlyCharges(formData: FormData) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const parsed = generateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -79,7 +79,7 @@ export async function generateMonthlyCharges(formData: FormData) {
 
 export async function applyLateFees(formData: FormData) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const now = new Date();
 
@@ -143,7 +143,7 @@ export async function applyLateFees(formData: FormData) {
 
 export async function exemptCharge(chargeId: string, reason: string) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const charge = await prisma.monthlyCharge.findUnique({ where: { id: chargeId } });
   if (!charge) return { error: "Mensalidade não encontrada." };
@@ -169,7 +169,7 @@ export async function exemptCharge(chargeId: string, reason: string) {
 
 export async function notifyOverdueResidents() {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const overdueCharges = await prisma.monthlyCharge.findMany({
     where: { status: { in: ["overdue", "partial"] } },

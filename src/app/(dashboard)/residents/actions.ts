@@ -21,7 +21,7 @@ const residentSchema = z.object({
 
 export async function createResident(formData: FormData) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const parsed = residentSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -69,7 +69,7 @@ export async function createResident(formData: FormData) {
 
 export async function updateResident(residentId: string, formData: FormData) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const parsed = residentSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -128,7 +128,7 @@ export async function updateResident(residentId: string, formData: FormData) {
 
 export async function deactivateResident(residentId: string) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const resident = await prisma.resident.findUnique({
     where: { id: residentId },

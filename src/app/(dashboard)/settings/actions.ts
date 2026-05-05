@@ -25,7 +25,7 @@ const updateUserSchema = z.object({
 
 export async function createUser(formData: FormData) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const parsed = createUserSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -55,7 +55,7 @@ export async function createUser(formData: FormData) {
 
 export async function updateUser(formData: FormData) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const parsed = updateUserSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -89,7 +89,7 @@ export async function updateUser(formData: FormData) {
 
 export async function toggleUserStatus(userId: string) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   if (userId === session.user.id) {
     return { error: "Não pode desactivar a sua própria conta." };
@@ -117,7 +117,7 @@ export async function toggleUserStatus(userId: string) {
 
 export async function resetPassword(formData: FormData) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const userId = formData.get("userId") as string;
   const password = formData.get("password") as string;

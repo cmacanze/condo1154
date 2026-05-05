@@ -15,7 +15,7 @@ const reportSchema = z.object({
 
 export async function generateReport(formData: FormData) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const parsed = reportSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -93,7 +93,7 @@ export async function generateReport(formData: FormData) {
 
 export async function publishReport(reportId: string) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const report = await prisma.report.findUnique({ where: { id: reportId } });
   if (!report) return { error: "Relatório não encontrado." };
@@ -116,7 +116,7 @@ export async function publishReport(reportId: string) {
 
 export async function unpublishReport(reportId: string) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const report = await prisma.report.findUnique({ where: { id: reportId } });
   if (!report) return { error: "Relatório não encontrado." };

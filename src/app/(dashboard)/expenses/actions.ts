@@ -20,7 +20,7 @@ const expenseSchema = z.object({
 
 export async function createExpense(formData: FormData) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const parsed = expenseSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -63,7 +63,7 @@ export async function createExpense(formData: FormData) {
 
 export async function updateExpense(id: string, formData: FormData) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const parsed = expenseSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -100,7 +100,7 @@ export async function updateExpense(id: string, formData: FormData) {
 
 export async function cancelExpense(id: string, reason: string) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") throw new Error("Acesso negado");
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   if (!reason.trim()) return { error: "Motivo obrigatório." };
 

@@ -24,9 +24,7 @@ const apartmentSchema = z.object({
 
 export async function createApartment(formData: FormData) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") {
-    throw new Error("Acesso negado");
-  }
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const parsed = apartmentSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -62,9 +60,7 @@ export async function createApartment(formData: FormData) {
 
 export async function updateApartment(id: string, formData: FormData) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") {
-    throw new Error("Acesso negado");
-  }
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const parsed = apartmentSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -110,9 +106,7 @@ export async function updateApartment(id: string, formData: FormData) {
 
 export async function deleteApartment(id: string) {
   const session = await auth();
-  if (!session || session.user.role !== "admin") {
-    throw new Error("Acesso negado");
-  }
+  if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
   const hasCharges = await prisma.monthlyCharge.count({ where: { apartmentId: id } });
   if (hasCharges > 0) {
