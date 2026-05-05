@@ -21,7 +21,9 @@ import {
 } from "@/components/ui/table";
 import { ApartmentForm } from "./apartment-form";
 import { createApartment, updateApartment, deleteApartment } from "@/app/(dashboard)/apartments/actions";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatMZN } from "@/lib/utils";
+import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
 const unitTypeLabel: Record<string, string> = {
@@ -32,12 +34,6 @@ const unitTypeLabel: Record<string, string> = {
   other: "Outro",
 };
 
-const lateFeeLabel: Record<string, string> = {
-  none: "Sem multa",
-  fixed: "Fixo",
-  percentage: "Percentagem",
-};
-
 interface ApartmentsClientProps {
   apartments: Apartment[];
   isAdmin: boolean;
@@ -46,6 +42,7 @@ interface ApartmentsClientProps {
 export function ApartmentsClient({ apartments, isAdmin }: ApartmentsClientProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [editApartment, setEditApartment] = useState<Apartment | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   const filtered = apartments.filter((a) =>
@@ -54,21 +51,23 @@ export function ApartmentsClient({ apartments, isAdmin }: ApartmentsClientProps)
 
   async function handleCreate(formData: FormData) {
     const result = await createApartment(formData);
-    if (result.success) setCreateOpen(false);
+    if (result.success) { setCreateOpen(false); toast.success("Apartamento criado."); }
     return result;
   }
 
   async function handleUpdate(formData: FormData) {
     if (!editApartment) return { error: "Erro" };
     const result = await updateApartment(editApartment.id, formData);
-    if (result.success) setEditApartment(null);
+    if (result.success) { setEditApartment(null); toast.success("Apartamento actualizado."); }
     return result;
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Confirma a eliminação deste apartamento?")) return;
-    const result = await deleteApartment(id);
-    if (result.error) alert(result.error);
+  async function handleDelete() {
+    if (!deleteId) return;
+    const result = await deleteApartment(deleteId);
+    setDeleteId(null);
+    if (result.error) toast.error(result.error);
+    else toast.success("Apartamento eliminado.");
   }
 
   return (
@@ -141,17 +140,13 @@ export function ApartmentsClient({ apartments, isAdmin }: ApartmentsClientProps)
                   {isAdmin && (
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setEditApartment(apt)}
-                        >
+                        <Button variant="ghost" size="icon" onClick={() => setEditApartment(apt)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(apt.id)}
+                          onClick={() => setDeleteId(apt.id)}
                           className="text-red-500 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -165,6 +160,16 @@ export function ApartmentsClient({ apartments, isAdmin }: ApartmentsClientProps)
           </TableBody>
         </Table>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        title="Eliminar apartamento"
+        description="Esta acção é irreversível. Todos os dados associados serão perdidos."
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+      />
 
       <Dialog open={!!editApartment} onOpenChange={(o) => !o && setEditApartment(null)}>
         <DialogContent className="max-w-2xl">

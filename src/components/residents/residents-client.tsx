@@ -34,6 +34,8 @@ import {
   updateResident,
   deactivateResident,
 } from "@/app/(dashboard)/residents/actions";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { toast } from "sonner";
 import { Plus, Pencil, UserX } from "lucide-react";
 
 type ResidentWithRelations = Resident & {
@@ -186,6 +188,7 @@ export function ResidentsClient({
 }) {
   const [createOpen, setCreateOpen] = useState(false);
   const [editResident, setEditResident] = useState<ResidentWithRelations | null>(null);
+  const [deactivateId, setDeactivateId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   const filtered = residents.filter(
@@ -281,11 +284,7 @@ export function ResidentsClient({
                             variant="ghost"
                             size="icon"
                             className="text-orange-500 hover:text-orange-700"
-                            onClick={async () => {
-                              if (confirm("Desactivar este morador?")) {
-                                await deactivateResident(r.id);
-                              }
-                            }}
+                            onClick={() => setDeactivateId(r.id)}
                           >
                             <UserX className="h-4 w-4" />
                           </Button>
@@ -319,6 +318,22 @@ export function ResidentsClient({
           )}
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deactivateId}
+        title="Desactivar morador"
+        description="O morador perderá acesso ao sistema. Pode ser reactivado posteriormente."
+        confirmLabel="Desactivar"
+        destructive
+        onConfirm={async () => {
+          if (deactivateId) {
+            await deactivateResident(deactivateId);
+            toast.success("Morador desactivado.");
+          }
+          setDeactivateId(null);
+        }}
+        onCancel={() => setDeactivateId(null)}
+      />
     </div>
   );
 }

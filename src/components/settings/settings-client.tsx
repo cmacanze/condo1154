@@ -27,6 +27,7 @@ import {
   toggleUserStatus,
   resetPassword,
 } from "@/app/(dashboard)/settings/actions";
+import { toast } from "sonner";
 import { Plus, Pencil, KeyRound, UserX, UserCheck } from "lucide-react";
 
 const roleLabel: Record<string, string> = {
@@ -80,7 +81,8 @@ export function SettingsClient({
 
   async function handleToggleStatus(userId: string) {
     const result = await toggleUserStatus(userId);
-    if ("error" in result) alert(result.error);
+    if ("error" in result) toast.error(result.error);
+    else toast.success("Estado do utilizador actualizado.");
   }
 
   return (

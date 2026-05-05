@@ -28,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ChargeStatusBadge } from "./charge-status-badge";
 import {
   generateMonthlyCharges,
@@ -36,6 +37,7 @@ import {
   notifyOverdueResidents,
 } from "@/app/(dashboard)/charges/actions";
 import { formatMZN, formatDate, formatMonth } from "@/lib/utils";
+import { toast } from "sonner";
 import { Zap, Calendar, ShieldOff, Bell } from "lucide-react";
 
 type ChargeWithApartment = MonthlyCharge & { apartment: Apartment };
@@ -62,6 +64,7 @@ export function ChargesClient({
   const [genMonth, setGenMonth] = useState(now.getMonth() + 1);
   const [genResult, setGenResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [confirm, setConfirm] = useState<"fees" | "notify" | null>(null);
 
   const filtered = charges.filter((c) => {
     const matchStatus = filterStatus === "all" || c.status === filterStatus;
@@ -84,17 +87,15 @@ export function ChargesClient({
   }
 
   async function handleApplyFees() {
-    if (!confirm("Aplicar multas em todas as mensalidades em atraso sem multa?")) return;
     const result = await applyLateFees(new FormData());
-    if (result.success) alert(`Multas aplicadas: ${result.applied}`);
+    if (result.success) toast.success(`Multas aplicadas: ${result.applied}`);
   }
 
   async function handleNotify() {
-    if (!confirm("Enviar notificações por email a todos os moradores com quotas em atraso?")) return;
     setLoading(true);
     const result = await notifyOverdueResidents();
     setLoading(false);
-    if (result.success) alert(`Notificações enviadas: ${result.notified}`);
+    if (result.success) toast.success(`Notificações enviadas: ${result.notified}`);
   }
 
   async function handleExempt() {
@@ -103,8 +104,9 @@ export function ChargesClient({
     if (result.success) {
       setExemptId(null);
       setExemptReason("");
+      toast.success("Mensalidade isenta.");
     } else {
-      alert(result.error);
+      toast.error(result.error);
     }
   }
 
@@ -140,11 +142,11 @@ export function ChargesClient({
 
         {isAdmin && (
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleNotify} size="sm" disabled={loading}>
+            <Button variant="outline" onClick={() => setConfirm("notify")} size="sm" disabled={loading}>
               <Bell className="mr-1 h-4 w-4" />
               Notificar em Atraso
             </Button>
-            <Button variant="outline" onClick={handleApplyFees} size="sm">
+            <Button variant="outline" onClick={() => setConfirm("fees")} size="sm">
               <Zap className="mr-1 h-4 w-4" />
               Aplicar Multas
             </Button>
@@ -260,6 +262,23 @@ export function ChargesClient({
           </TableBody>
         </Table>
       </div>
+
+      <ConfirmDialog
+        open={confirm === "fees"}
+        title="Aplicar multas"
+        description="Serão aplicadas multas a todas as mensalidades em atraso que ainda não têm multa. Esta acção não pode ser revertida automaticamente."
+        confirmLabel="Aplicar"
+        onConfirm={() => { setConfirm(null); handleApplyFees(); }}
+        onCancel={() => setConfirm(null)}
+      />
+      <ConfirmDialog
+        open={confirm === "notify"}
+        title="Notificar moradores em atraso"
+        description="Será enviado um email a todos os moradores com mensalidades em estado de atraso ou parcial."
+        confirmLabel="Enviar notificações"
+        onConfirm={() => { setConfirm(null); handleNotify(); }}
+        onCancel={() => setConfirm(null)}
+      />
 
       <Dialog open={!!exemptId} onOpenChange={(o) => !o && setExemptId(null)}>
         <DialogContent className="max-w-sm">

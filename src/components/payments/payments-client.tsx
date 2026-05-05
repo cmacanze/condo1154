@@ -34,6 +34,7 @@ import { ChargeStatusBadge } from "@/components/charges/charge-status-badge";
 import { createPayment, cancelPayment } from "@/app/(dashboard)/payments/actions";
 import { formatMZN, formatDate, formatMonth } from "@/lib/utils";
 import { FileUpload } from "@/components/ui/file-upload";
+import { toast } from "sonner";
 import { Plus, XCircle, Receipt } from "lucide-react";
 
 type PaymentWithRelations = Payment & {
@@ -330,8 +331,9 @@ export function PaymentsClient({
                   if (r.success) {
                     setCancelId(null);
                     setCancelReason("");
+                    toast.success("Pagamento cancelado.");
                   } else {
-                    alert(r.error);
+                    toast.error(r.error);
                   }
                 }}
               >

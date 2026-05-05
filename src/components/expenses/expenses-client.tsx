@@ -33,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { createExpense, updateExpense, cancelExpense } from "@/app/(dashboard)/expenses/actions";
 import { formatMZN, formatDate } from "@/lib/utils";
 import { FileUpload } from "@/components/ui/file-upload";
+import { toast } from "sonner";
 import { Plus, Pencil, XCircle, Eye, EyeOff, Paperclip } from "lucide-react";
 
 type ExpenseWithUser = Expense & { createdBy: User };
@@ -342,8 +343,9 @@ export function ExpensesClient({
                   if (r.success) {
                     setCancelId(null);
                     setCancelReason("");
+                    toast.success("Despesa cancelada.");
                   } else {
-                    alert(r.error);
+                    toast.error(r.error);
                   }
                 }}
               >
