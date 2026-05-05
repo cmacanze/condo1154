@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Recibos" };
+
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ReceiptsClient } from "@/components/receipts/receipts-client";

@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Mensalidades" };
+
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ChargesClient } from "@/components/charges/charges-client";

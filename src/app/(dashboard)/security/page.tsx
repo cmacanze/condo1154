@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Seguranças" };
+
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SecurityClient } from "@/components/security/security-client";
