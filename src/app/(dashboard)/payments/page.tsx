@@ -13,6 +13,7 @@ export default async function PaymentsPage() {
     prisma.payment.findMany({
       include: { apartment: true, monthlyCharge: true, createdBy: true },
       orderBy: { createdAt: "desc" },
+      take: 500,
     }),
     prisma.monthlyCharge.findMany({
       include: { apartment: true },

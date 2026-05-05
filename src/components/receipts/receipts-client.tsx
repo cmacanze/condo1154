@@ -19,7 +19,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatMZN, formatDate, formatMonth } from "@/lib/utils";
-import { Printer, Eye, Download } from "lucide-react";
+import { Printer, Eye, Download, FileDown } from "lucide-react";
+
+function downloadCsv(filename: string, rows: string[][]) {
+  const bom = "﻿";
+  const csv = bom + rows.map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+  Object.assign(document.createElement("a"), { href: url, download: filename }).click();
+  URL.revokeObjectURL(url);
+}
 
 type PaymentWithRelations = Payment & {
   apartment: Apartment;
@@ -112,13 +120,34 @@ export function ReceiptsClient({
 
   return (
     <div className="space-y-4">
-      <input
-        type="search"
-        placeholder="Pesquisar por recibo ou apartamento..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="h-9 w-full max-w-xs rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="search"
+          placeholder="Pesquisar por recibo ou apartamento..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-9 w-full max-w-xs rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            const header = ["Nº Recibo","Apartamento","Mês","Data","Valor (MZN)","Método"];
+            const rows = filtered.map((p) => [
+              p.receiptNumber,
+              p.apartment.name,
+              formatMonth(p.monthlyCharge.referenceMonth),
+              formatDate(p.paymentDate),
+              p.amount.toString(),
+              methodLabel[p.paymentMethod] ?? p.paymentMethod,
+            ]);
+            downloadCsv("recibos.csv", [header, ...rows]);
+          }}
+        >
+          <FileDown className="mr-1 h-4 w-4" />
+          Exportar CSV
+        </Button>
+      </div>
 
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
         <Table>

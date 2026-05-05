@@ -29,6 +29,7 @@ export default async function ReceiptsPage() {
       createdBy: true,
     },
     orderBy: { createdAt: "desc" },
+    take: 500,
   });
 
   return (
