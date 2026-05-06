@@ -10,7 +10,7 @@ export default function Loading() {
         </div>
         <Skeleton className="h-9 w-40" />
       </div>
-      <TableSkeleton rows={7} cols={7} />
+      <TableSkeleton rows={7} cols={8} />
     </div>
   );
 }

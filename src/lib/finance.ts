@@ -11,10 +11,7 @@ export function calculateLateFee(
 
   if (lateFeeType === "none") return 0;
   if (lateFeeType === "fixed") return feeVal.toNumber();
-  if (lateFeeType === "percentage") {
-    return base.mul(feeVal).div(100).toDecimalPlaces(2).toNumber();
-  }
-  return 0;
+  return base.mul(feeVal).div(100).toDecimalPlaces(2).toNumber();
 }
 
 export function calculateOutstanding(
