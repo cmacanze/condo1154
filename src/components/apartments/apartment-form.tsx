@@ -120,15 +120,16 @@ export function ApartmentForm({ apartment, onSubmit, onCancel }: ApartmentFormPr
         {lateFeeType !== "none" && (
           <div className="space-y-2">
             <Label htmlFor="lateFeeValue">
-              {lateFeeType === "fixed" ? "Valor da Multa (MZN)" : "Percentagem (%)"}
+              {lateFeeType === "fixed" ? "Valor da Multa (MZN) *" : "Percentagem (%) *"}
             </Label>
             <Input
               id="lateFeeValue"
               name="lateFeeValue"
               type="number"
               step="0.01"
-              min="0"
-              defaultValue={apartment?.lateFeeValue?.toString() ?? "0"}
+              min="0.01"
+              defaultValue={apartment?.lateFeeValue?.toString() ?? ""}
+              required
             />
           </div>
         )}

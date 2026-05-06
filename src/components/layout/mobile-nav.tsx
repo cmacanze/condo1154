@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X, Building2 } from "lucide-react";
 import { Sidebar } from "./sidebar";
 import { UserRole } from "@prisma/client";
@@ -12,6 +12,13 @@ interface MobileNavProps {
 
 export function MobileNav({ userRole, userName }: MobileNavProps) {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [open]);
 
   return (
     <>
