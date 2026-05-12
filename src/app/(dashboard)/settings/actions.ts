@@ -19,6 +19,7 @@ const createUserSchema = z.object({
 const updateUserSchema = z.object({
   userId: z.string().min(1),
   name: z.string().min(1, "Nome obrigatório"),
+  email: z.string().email("Email inválido"),
   phone: z.string().optional(),
   role: z.nativeEnum(UserRole),
 });
@@ -60,7 +61,7 @@ export async function updateUser(formData: FormData) {
   const parsed = updateUserSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { userId, name, phone, role } = parsed.data;
+  const { userId, name, email, phone, role } = parsed.data;
 
   if (userId === session.user.id && role !== "admin") {
     return { error: "Não pode remover o seu próprio acesso de administrador." };
@@ -69,9 +70,14 @@ export async function updateUser(formData: FormData) {
   const existing = await prisma.user.findUnique({ where: { id: userId } });
   if (!existing) return { error: "Utilizador não encontrado." };
 
+  if (email !== existing.email) {
+    const taken = await prisma.user.findUnique({ where: { email } });
+    if (taken) return { error: "Já existe um utilizador com este email." };
+  }
+
   await prisma.user.update({
     where: { id: userId },
-    data: { name, phone: phone || null, role },
+    data: { name, email, phone: phone || null, role },
   });
 
   await createAuditLog({
@@ -79,8 +85,8 @@ export async function updateUser(formData: FormData) {
     entityType: "user",
     entityId: userId,
     action: "updated",
-    oldValues: { name: existing.name, role: existing.role },
-    newValues: { name, role },
+    oldValues: { name: existing.name, email: existing.email, role: existing.role },
+    newValues: { name, email, role },
   });
 
   revalidatePath("/settings");

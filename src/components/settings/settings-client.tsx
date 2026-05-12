@@ -56,7 +56,7 @@ export function SettingsClient({
     const result = await createUser(new FormData(e.currentTarget));
     setLoading(false);
     if ("error" in result) setError(result.error ?? "Erro desconhecido");
-    else setCreateOpen(false);
+    else { setCreateOpen(false); toast.success("Utilizador criado."); }
   }
 
   async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
@@ -66,7 +66,7 @@ export function SettingsClient({
     const result = await updateUser(new FormData(e.currentTarget));
     setLoading(false);
     if ("error" in result) setError(result.error ?? "Erro desconhecido");
-    else setEditUser(null);
+    else { setEditUser(null); toast.success("Utilizador actualizado."); }
   }
 
   async function handleResetPassword(e: React.FormEvent<HTMLFormElement>) {
@@ -76,7 +76,7 @@ export function SettingsClient({
     const result = await resetPassword(new FormData(e.currentTarget));
     setLoading(false);
     if ("error" in result) setError(result.error ?? "Erro desconhecido");
-    else setResetUser(null);
+    else { setResetUser(null); toast.success("Password redefinida."); }
   }
 
   async function handleToggleStatus(userId: string) {
@@ -182,6 +182,10 @@ export function SettingsClient({
               <div className="space-y-2">
                 <Label>Nome *</Label>
                 <Input name="name" defaultValue={editUser.name} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Email *</Label>
+                <Input name="email" type="email" defaultValue={editUser.email} required />
               </div>
               <div className="space-y-2">
                 <Label>Telefone</Label>
