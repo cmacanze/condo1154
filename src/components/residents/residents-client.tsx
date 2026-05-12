@@ -224,7 +224,7 @@ export function ResidentsClient({
                 apartments={apartments}
                 onSubmit={async (fd) => {
                   const r = await createResident(fd);
-                  if (r.success) setCreateOpen(false);
+                  if (r.success) { setCreateOpen(false); toast.success("Morador adicionado."); }
                   return r;
                 }}
                 onCancel={() => setCreateOpen(false)}
@@ -310,7 +310,7 @@ export function ResidentsClient({
               apartments={apartments}
               onSubmit={async (fd) => {
                 const r = await updateResident(editResident.id, fd);
-                if (r.success) setEditResident(null);
+                if (r.success) { setEditResident(null); toast.success("Morador actualizado."); }
                 return r;
               }}
               onCancel={() => setEditResident(null)}

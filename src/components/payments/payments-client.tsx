@@ -266,7 +266,10 @@ export function PaymentsClient({
                 charges={charges}
                 onSubmit={async (fd) => {
                   const r = await createPayment(fd);
-                  if (r.success) setCreateOpen(false);
+                  if (r.success) {
+                    setCreateOpen(false);
+                    toast.success(`Pagamento registado. Recibo ${r.receiptNumber}`);
+                  }
                   return r;
                 }}
                 onCancel={() => setCreateOpen(false)}

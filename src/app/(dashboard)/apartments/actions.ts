@@ -108,9 +108,15 @@ export async function deleteApartment(id: string) {
   const session = await auth();
   if (!session || session.user.role !== "admin") return { error: "Acesso negado." };
 
-  const hasCharges = await prisma.monthlyCharge.count({ where: { apartmentId: id } });
+  const [hasCharges, hasResidents] = await Promise.all([
+    prisma.monthlyCharge.count({ where: { apartmentId: id } }),
+    prisma.resident.count({ where: { apartmentId: id } }),
+  ]);
   if (hasCharges > 0) {
     return { error: "Não é possível apagar um apartamento com mensalidades registadas. Desactive-o em vez disso." };
+  }
+  if (hasResidents > 0) {
+    return { error: "Não é possível apagar um apartamento com moradores associados. Remova os moradores primeiro." };
   }
 
   await prisma.apartment.delete({ where: { id } });

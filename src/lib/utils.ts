@@ -40,8 +40,8 @@ export function getReferenceMonthDate(year: number, month: number): Date {
 export function generateReceiptNumber(): string {
   const now = new Date();
   const year = now.getFullYear();
-  const rand = Math.floor(Math.random() * 100000)
-    .toString()
-    .padStart(5, "0");
+  const arr = new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  const rand = (arr[0] % 100000).toString().padStart(5, "0");
   return `REC-${year}-${rand}`;
 }
