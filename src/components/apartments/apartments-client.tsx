@@ -24,7 +24,8 @@ import { createApartment, updateApartment, deleteApartment } from "@/app/(dashbo
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatMZN } from "@/lib/utils";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Plus, Pencil, Trash2, Eye } from "lucide-react";
 
 const unitTypeLabel: Record<string, string> = {
   apartment: "Apartamento",
@@ -108,13 +109,13 @@ export function ApartmentsClient({ apartments, isAdmin }: ApartmentsClientProps)
               <TableHead>Dia Limite</TableHead>
               <TableHead>Multa</TableHead>
               <TableHead>Estado</TableHead>
-              {isAdmin && <TableHead className="w-24">Acções</TableHead>}
+              <TableHead className="w-28">Acções</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-gray-400 py-8">
+                <TableCell colSpan={7} className="text-center text-gray-400 py-8">
                   Nenhum apartamento encontrado.
                 </TableCell>
               </TableRow>
@@ -137,23 +138,30 @@ export function ApartmentsClient({ apartments, isAdmin }: ApartmentsClientProps)
                       {apt.status === "active" ? "Activo" : "Inactivo"}
                     </Badge>
                   </TableCell>
-                  {isAdmin && (
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => setEditApartment(apt)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteId(apt.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" title="Ver detalhes" asChild>
+                        <Link href={`/apartments/${apt.id}`}>
+                          <Eye className="h-4 w-4 text-gray-500" />
+                        </Link>
+                      </Button>
+                      {isAdmin && (
+                        <>
+                          <Button variant="ghost" size="icon" onClick={() => setEditApartment(apt)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteId(apt.id)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             )}
