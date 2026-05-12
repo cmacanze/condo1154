@@ -16,6 +16,7 @@ export default async function ReportsPage() {
     where,
     include: { createdBy: true },
     orderBy: { referenceMonth: "desc" },
+    take: 60,
   });
 
   return (

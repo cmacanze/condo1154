@@ -23,55 +23,46 @@ export async function generateMonthlyCharges(formData: FormData) {
   const { year, month } = parsed.data;
   const referenceMonth = new Date(year, month - 1, 1);
 
-  const apartments = await prisma.apartment.findMany({
-    where: { status: "active" },
-  });
+  const [apartments, existingCharges] = await Promise.all([
+    prisma.apartment.findMany({ where: { status: "active" } }),
+    prisma.monthlyCharge.findMany({
+      where: { referenceMonth },
+      select: { apartmentId: true },
+    }),
+  ]);
 
-  let created = 0;
-  let skipped = 0;
+  const existingApartmentIds = new Set(existingCharges.map((c) => c.apartmentId));
+  const toCreate = apartments.filter((apt) => !existingApartmentIds.has(apt.id));
+  const skipped = apartments.length - toCreate.length;
 
-  for (const apt of apartments) {
-    const existing = await prisma.monthlyCharge.findUnique({
-      where: {
-        apartmentId_referenceMonth: {
+  if (toCreate.length > 0) {
+    await prisma.monthlyCharge.createMany({
+      data: toCreate.map((apt) => {
+        const baseAmount = parseFloat(apt.monthlyContribution.toString());
+        return {
           apartmentId: apt.id,
           referenceMonth,
-        },
-      },
-    });
-
-    if (existing) {
-      skipped++;
-      continue;
-    }
-
-    const baseAmount = parseFloat(apt.monthlyContribution.toString());
-    const dueDate = new Date(year, month - 1, apt.paymentDueDay);
-
-    await prisma.monthlyCharge.create({
-      data: {
-        apartmentId: apt.id,
-        referenceMonth,
-        baseAmount,
-        dueDate,
-        lateFeeAmount: 0,
-        totalDue: baseAmount,
-        totalPaid: 0,
-        outstandingAmount: baseAmount,
-        status: "pending",
-      },
+          baseAmount,
+          dueDate: new Date(year, month - 1, apt.paymentDueDay),
+          lateFeeAmount: 0,
+          totalDue: baseAmount,
+          totalPaid: 0,
+          outstandingAmount: baseAmount,
+          status: "pending",
+        };
+      }),
     });
 
     await createAuditLog({
       userId: session.user.id,
       entityType: "monthly_charge",
-      entityId: apt.id,
+      entityId: referenceMonth.toISOString(),
       action: "generated",
-      newValues: { apartmentId: apt.id, referenceMonth: referenceMonth.toISOString(), baseAmount },
+      newValues: { referenceMonth: referenceMonth.toISOString(), created: toCreate.length },
     });
-
-    created++;
   }
+
+  const created = toCreate.length;
 
   revalidatePath("/charges");
   return { success: true, created, skipped };

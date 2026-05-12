@@ -30,13 +30,12 @@ export default async function ChargesPage({
     orderBy: [{ referenceMonth: "desc" }, { apartment: { name: "asc" } }],
   });
 
-  // Years that have data, for the year picker
-  const allYears = await prisma.monthlyCharge.findMany({
-    select: { referenceMonth: true },
-    distinct: ["referenceMonth"],
+  // Distinct years that have charge data, for the year picker
+  const yearGroups = await prisma.monthlyCharge.groupBy({
+    by: ["referenceMonth"],
     orderBy: { referenceMonth: "desc" },
   });
-  const years = [...new Set(allYears.map((c) => new Date(c.referenceMonth).getFullYear()))];
+  const years = [...new Set(yearGroups.map((g) => new Date(g.referenceMonth).getFullYear()))];
   if (!years.includes(year)) years.push(year);
   years.sort((a, b) => b - a);
 
