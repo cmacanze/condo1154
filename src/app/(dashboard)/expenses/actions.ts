@@ -9,7 +9,7 @@ import { z } from "zod";
 import { ExpenseCategory, PaymentMethod } from "@prisma/client";
 
 const expenseSchema = z.object({
-  expenseDate: z.string().min(1, "Data obrigatória"),
+  expenseDate: z.string().min(1, "Data obrigatória").refine((d) => !isNaN(new Date(d).getTime()), "Data inválida"),
   category: z.nativeEnum(ExpenseCategory),
   description: z.string().min(1, "Descrição obrigatória"),
   beneficiary: z.string().optional(),

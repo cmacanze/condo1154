@@ -13,7 +13,7 @@ import Decimal from "decimal.js";
 
 const paymentSchema = z.object({
   monthlyChargeId: z.string().min(1, "Mensalidade obrigatória"),
-  paymentDate: z.string().min(1, "Data obrigatória"),
+  paymentDate: z.string().min(1, "Data obrigatória").refine((d) => !isNaN(new Date(d).getTime()), "Data inválida"),
   amount: z.coerce.number().positive("Valor deve ser positivo"),
   paymentMethod: z.nativeEnum(PaymentMethod),
   transactionReference: z.string().optional(),
@@ -29,30 +29,7 @@ export async function createPayment(formData: FormData) {
 
   const data = parsed.data;
 
-  const charge = await prisma.monthlyCharge.findUnique({
-    where: { id: data.monthlyChargeId },
-  });
-  if (!charge) return { error: "Mensalidade não encontrada." };
-  if (charge.status === "paid") return { error: "Esta mensalidade já está totalmente paga." };
-  if (charge.status === "cancelled") return { error: "Esta mensalidade foi cancelada." };
-  if (charge.status === "exempt") return { error: "Esta mensalidade está isenta." };
-
-  const totalDue = new Decimal(charge.totalDue.toString());
-  const totalPaid = new Decimal(charge.totalPaid.toString());
-  const paymentAmount = new Decimal(data.amount.toString());
-
-  const newTotalPaid = totalPaid.plus(paymentAmount);
-
-  if (newTotalPaid.greaterThan(totalDue)) {
-    return { error: `O valor pago (${newTotalPaid.toFixed(2)} MZN) excede o total em dívida (${totalDue.toFixed(2)} MZN).` };
-  }
-
-  const newOutstanding = calculateOutstanding(totalDue.toString(), newTotalPaid.toString());
-  const newStatus = newOutstanding === 0 ? "paid" : "partial";
-
-  const receiptNumber = generateReceiptNumber();
-
-  // Handle optional attachment
+  // Handle optional attachment before the transaction
   let attachmentUrl: string | null = null;
   const attachmentFile = formData.get("attachment") as File | null;
   if (attachmentFile && attachmentFile.size > 0) {
@@ -61,30 +38,67 @@ export async function createPayment(formData: FormData) {
     attachmentUrl = uploadResult.url;
   }
 
-  const [payment] = await prisma.$transaction([
-    prisma.payment.create({
-      data: {
-        apartmentId: charge.apartmentId,
-        monthlyChargeId: charge.id,
-        paymentDate: new Date(data.paymentDate),
-        amount: data.amount,
-        paymentMethod: data.paymentMethod,
-        transactionReference: data.transactionReference || null,
-        receiptNumber,
-        attachmentUrl,
-        notes: data.notes || null,
-        createdById: session.user.id,
-      },
-    }),
-    prisma.monthlyCharge.update({
-      where: { id: charge.id },
-      data: {
-        totalPaid: newTotalPaid.toNumber(),
-        outstandingAmount: newOutstanding,
-        status: newStatus,
-      },
-    }),
-  ]);
+  let payment: { id: string; receiptNumber: string };
+  try {
+    payment = await prisma.$transaction(async (tx) => {
+      // Re-read inside transaction to prevent race conditions
+      const charge = await tx.monthlyCharge.findUnique({
+        where: { id: data.monthlyChargeId },
+      });
+      if (!charge) throw new Error("Mensalidade não encontrada.");
+      if (charge.status === "paid") throw new Error("Esta mensalidade já está totalmente paga.");
+      if (charge.status === "cancelled") throw new Error("Esta mensalidade foi cancelada.");
+      if (charge.status === "exempt") throw new Error("Esta mensalidade está isenta.");
+
+      const totalDue = new Decimal(charge.totalDue.toString());
+      const totalPaid = new Decimal(charge.totalPaid.toString());
+      const paymentAmount = new Decimal(data.amount.toString());
+      const newTotalPaid = totalPaid.plus(paymentAmount);
+
+      if (newTotalPaid.greaterThan(totalDue)) {
+        throw new Error(`O valor pago (${newTotalPaid.toFixed(2)} MZN) excede o total em dívida (${totalDue.toFixed(2)} MZN).`);
+      }
+
+      const newOutstanding = calculateOutstanding(totalDue.toString(), newTotalPaid.toString());
+      const newStatus = newOutstanding === 0 ? "paid" : "partial";
+
+      // Retry receipt number generation on collision (unique constraint)
+      let receiptNumber = generateReceiptNumber();
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const exists = await tx.payment.findUnique({ where: { receiptNumber } });
+        if (!exists) break;
+        receiptNumber = generateReceiptNumber();
+      }
+
+      const p = await tx.payment.create({
+        data: {
+          apartmentId: charge.apartmentId,
+          monthlyChargeId: charge.id,
+          paymentDate: new Date(data.paymentDate),
+          amount: data.amount,
+          paymentMethod: data.paymentMethod,
+          transactionReference: data.transactionReference || null,
+          receiptNumber,
+          attachmentUrl,
+          notes: data.notes || null,
+          createdById: session.user.id,
+        },
+      });
+
+      await tx.monthlyCharge.update({
+        where: { id: charge.id },
+        data: {
+          totalPaid: newTotalPaid.toNumber(),
+          outstandingAmount: newOutstanding,
+          status: newStatus,
+        },
+      });
+
+      return p;
+    });
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro ao registar pagamento." };
+  }
 
   await createAuditLog({
     userId: session.user.id,
@@ -94,14 +108,14 @@ export async function createPayment(formData: FormData) {
     newValues: {
       amount: data.amount,
       method: data.paymentMethod,
-      receipt: receiptNumber,
-      chargeId: charge.id,
+      receipt: payment.receiptNumber,
+      chargeId: data.monthlyChargeId,
     },
   });
 
   revalidatePath("/payments");
   revalidatePath("/charges");
-  return { success: true, receiptNumber };
+  return { success: true, receiptNumber: payment.receiptNumber };
 }
 
 export async function cancelPayment(paymentId: string, reason: string) {

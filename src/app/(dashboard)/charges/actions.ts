@@ -83,50 +83,40 @@ export async function applyLateFees(formData: FormData) {
     include: { apartment: true },
   });
 
-  let applied = 0;
-
-  for (const charge of overdueCharges) {
+  const updates = overdueCharges.map((charge) => {
     const apt = charge.apartment;
     if (apt.lateFeeType === "none") {
-      await prisma.monthlyCharge.update({
-        where: { id: charge.id },
-        data: { status: "overdue" },
-      });
-      continue;
+      return { id: charge.id, data: { status: "overdue" as const }, feeAmount: 0, newTotalDue: 0 };
     }
-
-    const feeAmount = calculateLateFee(
-      charge.baseAmount.toString(),
-      apt.lateFeeType,
-      apt.lateFeeValue.toString()
-    );
-
+    const feeAmount = calculateLateFee(charge.baseAmount.toString(), apt.lateFeeType, apt.lateFeeValue.toString());
     const newTotalDue = parseFloat(charge.baseAmount.toString()) + feeAmount;
-    const newOutstanding = Math.max(
-      0,
-      newTotalDue - parseFloat(charge.totalPaid.toString())
-    );
+    const newOutstanding = Math.max(0, newTotalDue - parseFloat(charge.totalPaid.toString()));
+    return {
+      id: charge.id,
+      data: { lateFeeAmount: feeAmount, totalDue: newTotalDue, outstandingAmount: newOutstanding, status: "overdue" as const },
+      feeAmount,
+      newTotalDue,
+    };
+  });
 
-    await prisma.monthlyCharge.update({
-      where: { id: charge.id },
-      data: {
-        lateFeeAmount: feeAmount,
-        totalDue: newTotalDue,
-        outstandingAmount: newOutstanding,
-        status: "overdue",
-      },
-    });
+  await prisma.$transaction(updates.map((u) => prisma.monthlyCharge.update({ where: { id: u.id }, data: u.data })));
 
-    await createAuditLog({
-      userId: session.user.id,
-      entityType: "late_fee",
-      entityId: charge.id,
-      action: "applied",
-      newValues: { feeAmount, newTotalDue },
-    });
+  // Audit logs are non-blocking and don't need to be in the transaction
+  await Promise.all(
+    updates
+      .filter((u) => u.feeAmount > 0)
+      .map((u) =>
+        createAuditLog({
+          userId: session.user.id,
+          entityType: "late_fee",
+          entityId: u.id,
+          action: "applied",
+          newValues: { feeAmount: u.feeAmount, newTotalDue: u.newTotalDue },
+        })
+      )
+  );
 
-    applied++;
-  }
+  const applied = updates.filter((u) => u.feeAmount > 0).length;
 
   revalidatePath("/charges");
   return { success: true, applied };

@@ -33,6 +33,9 @@ export async function createApartment(formData: FormData) {
 
   const data = parsed.data;
 
+  const existing = await prisma.apartment.findFirst({ where: { name: data.name } });
+  if (existing) return { error: "Já existe um apartamento com este nome." };
+
   const apartment = await prisma.apartment.create({
     data: {
       name: data.name,
@@ -71,6 +74,11 @@ export async function updateApartment(id: string, formData: FormData) {
 
   const old = await prisma.apartment.findUnique({ where: { id } });
   if (!old) return { error: "Apartamento não encontrado." };
+
+  if (data.name !== old.name) {
+    const nameTaken = await prisma.apartment.findFirst({ where: { name: data.name } });
+    if (nameTaken) return { error: "Já existe um apartamento com este nome." };
+  }
 
   await prisma.apartment.update({
     where: { id },

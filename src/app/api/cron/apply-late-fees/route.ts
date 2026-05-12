@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calculateLateFee, calculateOutstanding } from "@/lib/finance";
@@ -9,7 +10,13 @@ export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
 
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  const incoming = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  if (
+    !cronSecret ||
+    !incoming ||
+    incoming.length !== cronSecret.length ||
+    !timingSafeEqual(Buffer.from(incoming), Buffer.from(cronSecret))
+  ) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
