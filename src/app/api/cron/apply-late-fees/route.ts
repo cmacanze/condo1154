@@ -96,10 +96,11 @@ export async function GET(req: NextRequest) {
       }
 
       if (didUpdate) {
-        const emailResults = await Promise.allSettled(
-          apt.residents
-            .filter((r) => r.user.email)
-            .map((r) =>
+        const recipients = apt.residents.filter((r) => r.user.email);
+        for (let i = 0; i < recipients.length; i += 50) {
+          const batch = recipients.slice(i, i + 50);
+          const emailResults = await Promise.allSettled(
+            batch.map((r) =>
               sendOverdueNotification({
                 residentName: r.user.name,
                 residentEmail: r.user.email!,
@@ -111,8 +112,9 @@ export async function GET(req: NextRequest) {
                 lateFeeAmount: parseFloat(charge.lateFeeAmount.toString()),
               })
             )
-        );
-        notifiedCount += emailResults.filter((r) => r.status === "fulfilled").length;
+          );
+          notifiedCount += emailResults.filter((r) => r.status === "fulfilled").length;
+        }
       }
     } catch (err) {
       errors.push(`charge ${charge.id}: ${err instanceof Error ? err.message : String(err)}`);

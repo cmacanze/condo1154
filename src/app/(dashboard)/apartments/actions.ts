@@ -20,7 +20,14 @@ const apartmentSchema = z.object({
   lateFeeValue: z.coerce.number().min(0),
   status: z.nativeEnum(ApartmentStatus),
   notes: z.string().optional(),
-});
+}).refine(
+  (d) => {
+    if (d.lateFeeType === "percentage") return d.lateFeeValue <= 100;
+    if (d.lateFeeType === "fixed") return d.lateFeeValue <= 9_999_999;
+    return true;
+  },
+  { message: "Valor de multa inválido (máx. 100% ou 9 999 999 MZN fixo)", path: ["lateFeeValue"] }
+);
 
 export async function createApartment(formData: FormData) {
   const session = await auth();

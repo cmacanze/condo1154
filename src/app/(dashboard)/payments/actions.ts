@@ -14,7 +14,7 @@ import Decimal from "decimal.js";
 const paymentSchema = z.object({
   monthlyChargeId: z.string().min(1, "Mensalidade obrigatória"),
   paymentDate: z.string().min(1, "Data obrigatória").refine((d) => !isNaN(new Date(d).getTime()), "Data inválida"),
-  amount: z.coerce.number().positive("Valor deve ser positivo"),
+  amount: z.coerce.number().positive("Valor deve ser positivo").max(9_999_999, "Valor demasiado elevado"),
   paymentMethod: z.nativeEnum(PaymentMethod),
   transactionReference: z.string().optional(),
   notes: z.string().optional(),

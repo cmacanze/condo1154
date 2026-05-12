@@ -13,7 +13,7 @@ const expenseSchema = z.object({
   category: z.nativeEnum(ExpenseCategory),
   description: z.string().min(1, "Descrição obrigatória"),
   beneficiary: z.string().optional(),
-  amount: z.coerce.number().positive("Valor deve ser positivo"),
+  amount: z.coerce.number().positive("Valor deve ser positivo").max(9_999_999, "Valor demasiado elevado"),
   paymentMethod: z.nativeEnum(PaymentMethod),
   isPublic: z.string().optional(),
 });

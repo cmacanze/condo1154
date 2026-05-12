@@ -163,10 +163,10 @@ export async function notifyOverdueResidents() {
     },
   });
 
-  const sends = overdueCharges.flatMap((charge) =>
+  const allSends = overdueCharges.flatMap((charge) =>
     charge.apartment.residents
       .filter((r) => r.user.email)
-      .map((r) =>
+      .map((r) => () =>
         sendOverdueNotification({
           residentName: r.user.name,
           residentEmail: r.user.email!,
@@ -180,8 +180,14 @@ export async function notifyOverdueResidents() {
       )
   );
 
-  const results = await Promise.all(sends);
-  const notified = results.filter((r) => r !== null).length;
+  // Send in batches of 50 to avoid provider rate limits
+  const BATCH_SIZE = 50;
+  let notified = 0;
+  for (let i = 0; i < allSends.length; i += BATCH_SIZE) {
+    const batch = allSends.slice(i, i + BATCH_SIZE);
+    const results = await Promise.all(batch.map((fn) => fn()));
+    notified += results.filter((r) => r !== null).length;
+  }
 
   return { success: true, notified };
 }

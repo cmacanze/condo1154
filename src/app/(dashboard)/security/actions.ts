@@ -15,7 +15,7 @@ const salarySchema = z.object({
   securityStaffId: z.string().min(1, "Segurança obrigatório"),
   referenceMonth: z.string().min(1, "Mês obrigatório").refine((d) => !isNaN(new Date(d + "-01").getTime()), "Mês inválido"),
   paymentDate: z.string().min(1, "Data obrigatória").refine((d) => !isNaN(new Date(d).getTime()), "Data inválida"),
-  amount: z.coerce.number().positive("Valor deve ser positivo"),
+  amount: z.coerce.number().positive("Valor deve ser positivo").max(9_999_999, "Valor demasiado elevado"),
   notes: z.string().optional(),
 });
 
