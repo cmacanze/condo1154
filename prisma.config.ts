@@ -1,9 +1,9 @@
 import path from "node:path";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
 export default defineConfig({
   schema: path.join("prisma", "schema.prisma"),
   datasource: {
-    url: env("DATABASE_URL"),
+    url: process.env.DATABASE_URL ?? "postgresql://condo:condo1154@localhost:5432/condo1154?schema=public",
   },
 });
