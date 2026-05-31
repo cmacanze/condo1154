@@ -3,6 +3,7 @@ export const metadata: Metadata = { title: "Moradores" };
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { serialize } from "@/lib/utils";
 import { ResidentsClient } from "@/components/residents/residents-client";
 
 export default async function ResidentsPage() {
@@ -27,8 +28,8 @@ export default async function ResidentsPage() {
         <p className="text-sm text-gray-500">{residents.length} morador(es) registado(s)</p>
       </div>
       <ResidentsClient
-        residents={residents}
-        apartments={apartments}
+        residents={serialize(residents)}
+        apartments={serialize(apartments)}
         isAdmin={session.user.role === "admin"}
       />
     </div>

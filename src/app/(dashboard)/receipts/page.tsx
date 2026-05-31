@@ -3,6 +3,7 @@ export const metadata: Metadata = { title: "Recibos" };
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { serialize } from "@/lib/utils";
 import { ReceiptsClient } from "@/components/receipts/receipts-client";
 
 export default async function ReceiptsPage() {
@@ -38,7 +39,7 @@ export default async function ReceiptsPage() {
         <h1 className="text-2xl font-bold text-gray-900">Recibos</h1>
         <p className="text-sm text-gray-500">{payments.length} recibo(s)</p>
       </div>
-      <ReceiptsClient payments={payments} />
+      <ReceiptsClient payments={serialize(payments)} />
     </div>
   );
 }

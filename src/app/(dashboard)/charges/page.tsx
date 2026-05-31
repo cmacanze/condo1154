@@ -3,6 +3,7 @@ export const metadata: Metadata = { title: "Mensalidades" };
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { serialize } from "@/lib/utils";
 import { ChargesClient } from "@/components/charges/charges-client";
 import { ChargesYearFilter } from "@/components/charges/charges-year-filter";
 import { Suspense } from "react";
@@ -50,7 +51,7 @@ export default async function ChargesPage({
           <ChargesYearFilter years={years} currentYear={year} />
         </Suspense>
       </div>
-      <ChargesClient charges={charges} isAdmin={session.user.role === "admin"} />
+      <ChargesClient charges={serialize(charges)} isAdmin={session.user.role === "admin"} />
     </div>
   );
 }

@@ -1,8 +1,26 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import Decimal from "decimal.js";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+// Converts Prisma Decimal objects to numbers so data is safe to pass
+// from Server Components to Client Components.
+export function serialize<T>(data: T): T {
+  if (data === null || data === undefined) return data;
+  if (data instanceof Decimal) return data.toNumber() as unknown as T;
+  if (data instanceof Date) return data as T;
+  if (Array.isArray(data)) return data.map(serialize) as unknown as T;
+  if (typeof data === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(data as Record<string, unknown>)) {
+      out[k] = serialize(v);
+    }
+    return out as T;
+  }
+  return data;
 }
 
 export function formatMZN(value: number | string | null | undefined): string {

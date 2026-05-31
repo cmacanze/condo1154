@@ -3,6 +3,7 @@ export const metadata: Metadata = { title: "Pagamentos" };
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { serialize } from "@/lib/utils";
 import { PaymentsClient } from "@/components/payments/payments-client";
 
 export default async function PaymentsPage() {
@@ -29,8 +30,8 @@ export default async function PaymentsPage() {
         <p className="text-sm text-gray-500">{payments.filter((p) => !p.cancelled).length} pagamento(s) activo(s)</p>
       </div>
       <PaymentsClient
-        payments={payments}
-        charges={charges}
+        payments={serialize(payments)}
+        charges={serialize(charges)}
         isAdmin={session.user.role === "admin"}
       />
     </div>

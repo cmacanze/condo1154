@@ -3,6 +3,7 @@ export const metadata: Metadata = { title: "Seguranças" };
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { serialize } from "@/lib/utils";
 import { SecurityClient } from "@/components/security/security-client";
 
 export default async function SecurityPage() {
@@ -25,8 +26,8 @@ export default async function SecurityPage() {
         <p className="text-sm text-gray-500">Gestão de seguranças e pagamentos de salários</p>
       </div>
       <SecurityClient
-        staff={staff}
-        salaries={salaries}
+        staff={serialize(staff)}
+        salaries={serialize(salaries)}
         isAdmin={session.user.role === "admin"}
       />
     </div>

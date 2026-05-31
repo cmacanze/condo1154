@@ -3,6 +3,7 @@ export const metadata: Metadata = { title: "Relatórios" };
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { serialize } from "@/lib/utils";
 import { ReportsClient } from "@/components/reports/reports-client";
 
 export default async function ReportsPage() {
@@ -26,7 +27,7 @@ export default async function ReportsPage() {
         <p className="text-sm text-gray-500">{reports.length} relatório(s)</p>
       </div>
       <ReportsClient
-        reports={reports}
+        reports={serialize(reports)}
         isAdmin={session.user.role === "admin"}
       />
     </div>

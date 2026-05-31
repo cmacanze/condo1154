@@ -4,7 +4,7 @@ export const metadata: Metadata = { title: "Despesas" };
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ExpensesClient } from "@/components/expenses/expenses-client";
-import { formatMZN } from "@/lib/utils";
+import { formatMZN, serialize } from "@/lib/utils";
 
 export default async function ExpensesPage() {
   const session = await auth();
@@ -28,7 +28,7 @@ export default async function ExpensesPage() {
         </p>
       </div>
       <ExpensesClient
-        expenses={expenses}
+        expenses={serialize(expenses)}
         isAdmin={session.user.role === "admin"}
       />
     </div>
